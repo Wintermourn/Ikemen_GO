@@ -25,10 +25,6 @@
 
 cd ..
 
-if [ ! -f ./go.mod ]; then
-	echo "Missing dependencies, please run get.sh"
-	exit
-fi
 if [ ! -d ./bin ]; then
 	mkdir bin
 fi

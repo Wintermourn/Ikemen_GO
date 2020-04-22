@@ -34,6 +34,9 @@ if [ ! -d ./bin ]; then
 fi
 
 echo "------------------------------------------------------------"
+docker run --rm -e OS=linux -v $(pwd):/code -it windblade/ikemen-dev:latest bash -c 'cd /code/build  && bash -x get.sh'
+
+echo "------------------------------------------------------------"
 echo "Building linux binary..."
 docker run --rm -e OS=linux -v $(pwd):/code -it windblade/ikemen-dev:latest bash -c 'cd /code/build  && bash -x build_crossplatform.sh' 
 

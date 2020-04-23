@@ -68,7 +68,7 @@ function main.f_btnPalNo(cmd)
 	--if commandGetState(cmd, '/d') then s = 12 end
 	--if commandGetState(cmd, '/w') then s = 18 end
 	for i, k in pairs({'a','b','c','x','y','z'}) do
-		if commandGetState(cmd, k) then return 1 + s end
+		if commandGetState(cmd, k) then return i + s end
 	end
 	return 0
 end

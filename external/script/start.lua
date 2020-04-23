@@ -10,86 +10,51 @@ setSelColRow(motif.select_info.columns, motif.select_info.rows)
 
 setSelCellSize(motif.select_info.cell_size[1] + motif.select_info.cell_spacing[1], motif.select_info.cell_size[2] + motif.select_info.cell_spacing[2])
 setSelCellScale(motif.select_info.portrait_scale[1], motif.select_info.portrait_scale[2])
+local env = getfenv() --get the environment ( https://www.lua.org/manual/5.1/manual.html#2.9 )
 
 --default team count after starting the game
-local p1NumTurns = math.max(2, config.NumTurns[1])
-local p1NumSimul = math.max(2, config.NumSimul[1])
-local p1NumTag = math.max(2, config.NumTag[1])
-local p1NumRatio = 1
-local p2NumTurns = math.max(2, config.NumTurns[1])
-local p2NumSimul = math.max(2, config.NumSimul[1])
-local p2NumTag = math.max(2, config.NumTag[1])
-local p2NumRatio = 1
---default team mode after starting the game
-local p1TeamMenu = 1
-local p2TeamMenu = 1
---let cursor wrap around
-local wrappingX = false
-local wrappingY = false
-if motif.select_info.wrapping == 1 then
-	if motif.select_info.wrapping_x == 1 then
-		wrappingX = true
-	end
-	if motif.select_info.wrapping_y == 1 then
-		wrappingY = true
+for p=1,2 do
+	for i, t in pairs({"Turns","Simul","Tag"}) do
+		env['p'..p..'Num'..t] = math.max(2, config['Num'..t][1])
 	end
 end
+local p1NumRatio,p2NumRatio = 1,1
+--default team mode after starting the game
+local p1TeamMenu,p2TeamMenu = 1,1
+--let cursor wrap around
+local wrappingX = (motif.select_info.wrapping>0 and motif.select_info.wrapping_x>0)
+local wrappingY = (motif.select_info.wrapping>0 and motif.select_info.wrapping_y>0)
 --initialize other local variables
 local t_victoryBGM = {false, false}
 local t_roster = {}
 local t_aiRamp = {}
-local t_p1Selected = {}
-local t_p2Selected = {}
-local t_p1Cursor = {}
-local t_p2Cursor = {}
-local p1RestoreCursor = false
-local p2RestoreCursor = false
-local p1Cell = false
-local p2Cell = false
-local p1TeamEnd = false
-local p1SelEnd = false
-local p1Ratio = false
-local p2TeamEnd = false
-local p2SelEnd = false
-local p2Ratio = false
-local selScreenEnd = false
-local stageEnd = false
-local coopEnd = false
-local restoreTeam = false
-local resetgrid = false
-local continueData = false
-local p1NumChars = 0
-local p2NumChars = 0
+local selScreenEnd,stageEnd,coopEnd,restoreTeam,resetgrid,continueData = false,false,false,false,false,false
 local matchNo = 0
-local p1SelX = 0
-local p1SelY = 0
-local p2SelX = 0
-local p2SelY = 0
-local p1FaceOffset = 0
-local p2FaceOffset = 0
-local p1RowOffset = 0
-local p2RowOffset = 0
+--variable list shortening for players
+for p=1,2 do
+	--set var to 0
+	for i, n in pairs({"NumChars","SelX","SelY","FaceOffset","RowOffset","FaceX","FaceY","TeamMode"}) do
+		env["p"..p..n] = 0
+	end
+	--set var to false
+	for i, b in pairs({"Cell","TeamEnd","SelEnd","Ratio","RestoreCursor"}) do
+		env["p"..p..b] = false
+	end
+	--set var to empty table
+	for i, t in pairs({"Cursor","Selected"}) do
+		env['p'..p..t] = {}
+	end
+end
 local winner = 0
 local t_gameStats = {}
 local t_recordText = {}
-local winCnt = 0
-local loseCnt = 0
-local p1FaceX = 0
-local p1FaceY = 0
-local p2FaceX = 0
-local p2FaceY = 0
-local p1TeamMode = 0
-local p2TeamMode = 0
-local lastMatch = 0
-local stageNo = 0
-local stageList = 0
-local timerSelect = 0
+local winCnt,loseCnt,lastMatch,stageNo,stageList,timerSelect = 0,0,0,0,0,0
 local t_savedData = {
-	['win'] = {0, 0},
-	['lose'] = {0, 0},
-	['time'] = {['total'] = 0, ['matches'] = {}},
-	['score'] = {['total'] = {0, 0}, ['matches'] = {}},
-	['consecutive'] = {0, 0},
+	win = {0, 0},
+	lose = {0, 0},
+	time = {total = 0, matches = {}},
+	score = {total = {0, 0}, matches = {}},
+	consecutive = {0, 0},
 }
 local fadeType = 'fadein'
 local challenger = false
@@ -883,7 +848,7 @@ function start.f_drawName(t, data, font, offsetX, offsetY, scaleX, scaleY, heigh
 	for i = 1, #t do
 		local x = offsetX
 		local f = font
-		if active_font ~= nil and active_row ~= nil then
+		if active_font and active_row then
 			if i == active_row then
 				f = active_font
 			else
@@ -1238,23 +1203,15 @@ if main.debugLog then main.f_printTable(start.t_grid, 'debug/t_grid.txt') end
 
 --return formatted clear time string
 function start.f_clearTimeText(text, totalSec)
-	local h = tostring(math.floor(totalSec / 3600))
-	local m = tostring(math.floor((totalSec / 3600 - h) * 60))
-	local s = tostring(math.floor(((totalSec / 3600 - h) * 60 - m) * 60))
-	local x = tostring(math.floor((((totalSec / 3600 - h) * 60 - m) * 60 - s) * 100))
-	if string.len(m) < 2 then
-		m = '0' .. m
-	end
-	if string.len(s) < 2 then
-		s = '0' .. s
-	end
-	if string.len(x) < 2 then
-		x = '0' .. x
-	end
-	text = text:gsub('%%h', h)
-	text = text:gsub('%%m', m)
-	text = text:gsub('%%s', s)
-	text = text:gsub('%%x', x)
+	local h = ''..math.floor(totalSec / 3600)
+	local m = ''..math.floor((totalSec / 3600 - h) * 60)
+	local s = ''..math.floor(((totalSec / 3600 - h) * 60 - m) * 60)
+	local x = ''..math.floor((((totalSec / 3600 - h) * 60 - m) * 60 - s) * 100)
+
+	m = (string.len(m)<2 and '0' or '').. m
+	s = (string.len(s)<2 and '0' or '').. s
+	x = (string.len(x)<2 and '0' or '').. x
+	text = text:gsub('%%h', h):gsub('%%m', m):gsub('%%s', s):gsub('%%x', x)
 	return text
 end
 

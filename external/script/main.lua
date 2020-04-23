@@ -67,12 +67,9 @@ function main.f_btnPalNo(cmd)
 	if commandGetState(cmd, '/s') then s = 6 end
 	--if commandGetState(cmd, '/d') then s = 12 end
 	--if commandGetState(cmd, '/w') then s = 18 end
-	if commandGetState(cmd, 'a') then return 1 + s end
-	if commandGetState(cmd, 'b') then return 2 + s end
-	if commandGetState(cmd, 'c') then return 3 + s end
-	if commandGetState(cmd, 'x') then return 4 + s end
-	if commandGetState(cmd, 'y') then return 5 + s end
-	if commandGetState(cmd, 'z') then return 6 + s end
+	for i, k in pairs({'a','b','c','x','y','z'}) do
+		if commandGetState(cmd, k) then return 1 + s end
+	end
 	return 0
 end
 
@@ -255,7 +252,7 @@ function text:create(t)
 		defsc = t.defsc or false
 	}
 	o.ti = textImgNew()
-	setmetatable(o, self)
+	setmetatable(o, self) -- https://https://www.lua.org/manual/5.1/manual.html#2.8
 	self.__index = self
 	--font
 	if o.font ~= '' then
@@ -293,7 +290,6 @@ end
 
 --update text
 function text:update(t)
-	local ok = false
 	local fontChange = false
 	local colorChange = false
 	local heightChange = false
